@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Name Splitter with Single Active Letter Effect</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #f4f6f8;
+    }
+
+    h1 {
+      text-align: center;
+      color: #222;
+      margin-top: 20px;
+    }
+
+    input {
+      padding: 10px;
+      width: 250px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #007bff;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 8px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .main-container {
+      display: flex;
+      transition: all 0.4s ease;
+    }
+
+    .left-panel, .right-panel {
+      flex: 1;
+      padding: 20px;
+      box-sizing: border-box;
+      height: calc(100vh - 100px);
+      overflow-y: auto;
+    }
+
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.4s ease;
+    }
+
+    .right-panel {
+      display: none;
+      background-color: #fff;
+      border-left: 2px solid #ccc;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .box-container {
+      margin-top: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .word {
+      display: flex;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .letter-box {
+      width: 40px;
+      height: 40px;
+      background-color: #fff;
+      border: 2px solid #007bff;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+      color: #007bff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      transition: transform 0.2s ease, all 0.3s ease;
+    }
+
+    .letter-box:hover {
+      transform: scale(1.2);
+    }
+
+    .letter-box.clicked {
+      background-color: #28a745 !important;
+      color: #fff !important;
+      border-color: #1e7e34 !important;
+    }
+
+    .even .letter-box {
+      background-color: #007bff;
+      color: #fff;
+      border-color: #0056b3;
+    }
+
+    #selectedWord {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #007bff;
+      display: none;
+      background-color: #e6f0ff;
+      padding: 10px 15px;
+      border-radius: 8px;
+      width: fit-content;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    table {
+      width: 90%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #007bff;
+      padding: 8px 12px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    td {
+      font-weight: bold;
+      color: #333;
+      position: relative;
+    }
+
+    .deleteBtn {
+      background-color: #dc3545;
+      padding: 2px 6px;
+      font-size: 14px;
+      border-radius: 50%;
+      margin-left: 6px;
+      cursor: pointer;
+    }
+
+    .deleteBtn:hover {
+      background-color: #a71d2a;
+    }
+
+    .input-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #resetBtn {
+      margin-top: 15px;
+      background-color: #dc3545;
+    }
+
+    #resetBtn:hover {
+      background-color: #a71d2a;
+    }
+  </style>
+</head>
+<body>
+  <h1>Enter Your Name</h1>
+
+  <div class="main-container">
+    <!-- Left side -->
+    <div class="left-panel" id="leftPanel">
+      <div class="input-container">
+        <input type="text" id="nameInput" placeholder="Type your name here..." />
+        <button onclick="splitName()">Submit</button>
+        <button id="toggleBtn" onclick="toggleColors()" style="display: none;">Toggle Colors</button>
+      </div>
+
+      <div id="selectedWord"></div>
+      <div id="output" class="box-container"></div>
+    </div>
+
+    <!-- Right side -->
+    <div class="right-panel" id="rightPanel">
+      <h2 style="text-align:center; color:#007bff;">Word & Click Count</h2>
+      <table id="clickTable">
+        <thead>
+          <tr>
+            <th>Word</th>
+            <th>Click Count</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button id="resetBtn" onclick="resetAll()">Reset</button>
+    </div>
+  </div>
+
+<script>
+  let toggleState = false;
+  let clickedWords = {};
+  let activeLetterBox = null; // track currently green letter
+
+  function splitName() {
+    const input = document.getElementById("nameInput").value.trim();
+    const outputDiv = document.getElementById("output");
+    const toggleBtn = document.getElementById("toggleBtn");
+    const selectedWordDiv = document.getElementById("selectedWord");
+    const rightPanel = document.getElementById("rightPanel");
+    const tableBody = document.querySelector("#clickTable tbody");
+
+    outputDiv.innerHTML = "";
+    selectedWordDiv.style.display = "none";
+    rightPanel.style.display = "none";
+    tableBody.innerHTML = "";
+    clickedWords = {};
+    activeLetterBox = null;
+
+    if (input === "") {
+      alert("Please enter a name!");
+      toggleBtn.style.display = "none";
+      return;
+    }
+
+    const words = input.split(/\s+/);
+    const uniqueWords = [];
+    const seen = new Set();
+
+    for (let word of words) {
+      const lower = word.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        uniqueWords.push(word);
+      }
+    }
+
+    uniqueWords.forEach((word, index) => {
+      const wordDiv = document.createElement("div");
+      wordDiv.classList.add("word");
+      wordDiv.id = "wordDiv-" + word;
+      if ((index + 1) % 2 === 0) wordDiv.classList.add("even");
+
+      for (let char of word) {
+        const box = document.createElement("div");
+        box.classList.add("letter-box");
+        box.textContent = char;
+
+        // Letter click logic
+        box.addEventListener("click", (e) => {
+          e.stopPropagation();
+
+          // Reset previous active letter
+          if (activeLetterBox && activeLetterBox !== box) {
+            activeLetterBox.classList.remove("clicked");
+          }
+
+          // Make this one green
+          box.classList.add("clicked");
+          activeLetterBox = box;
+
+          // Show side panel
+          document.getElementById("rightPanel").style.display = "flex";
+          document.getElementById("leftPanel").style.flex = "1";
+          document.getElementById("rightPanel").style.flex = "1";
+
+          // Update word click count
+          if (!clickedWords[word]) clickedWords[word] = { letters: word.length, clicks: 1 };
+          else clickedWords[word].clicks += 1;
+
+          selectedWordDiv.textContent = `You clicked: ${char} (from ${word})`;
+          selectedWordDiv.style.display = "block";
+          updateTable();
+        });
+
+        wordDiv.appendChild(box);
+      }
+
+      outputDiv.appendChild(wordDiv);
+    });
+
+    toggleBtn.style.display = "inline-block";
+    toggleState = false;
+  }
+
+  function updateTable() {
+    const tableBody = document.querySelector("#clickTable tbody");
+    tableBody.innerHTML = "";
+
+    for (let word in clickedWords) {
+      const row = document.createElement("tr");
+
+      const wordCell = document.createElement("td");
+      const clickCell = document.createElement("td");
+
+      wordCell.textContent = `${word}(${clickedWords[word].letters})`;
+      clickCell.textContent = clickedWords[word].clicks;
+
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "x";
+      delBtn.classList.add("deleteBtn");
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteWord(word);
+      });
+
+      clickCell.appendChild(delBtn);
+      row.appendChild(wordCell);
+      row.appendChild(clickCell);
+      tableBody.appendChild(row);
+    }
+  }
+
+  function deleteWord(word) {
+    delete clickedWords[word];
+    const wordDiv = document.getElementById("wordDiv-" + word);
+    if (wordDiv) wordDiv.remove();
+
+    if (activeLetterBox && wordDiv && wordDiv.contains(activeLetterBox)) {
+      activeLetterBox = null;
+    }
+
+    updateTable();
+  }
+
+  function resetAll() {
+    document.getElementById("nameInput").value = "";
+    document.getElementById("output").innerHTML = "";
+    document.getElementById("selectedWord").style.display = "none";
+    document.getElementById("rightPanel").style.display = "none";
+    document.querySelector("#clickTable tbody").innerHTML = "";
+    clickedWords = {};
+    activeLetterBox = null;
+  }
+
+  function toggleColors() {
+    const words = document.querySelectorAll(".word");
+    toggleState = !toggleState;
+
+    words.forEach((wordDiv, index) => {
+      const isEven = (index + 1) % 2 === 0;
+      if (toggleState) {
+        if (isEven) wordDiv.classList.remove("even");
+        else wordDiv.classList.add("even");
+      } else {
+        if (isEven) wordDiv.classList.add("even");
+        else wordDiv.classList.remove("even");
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
